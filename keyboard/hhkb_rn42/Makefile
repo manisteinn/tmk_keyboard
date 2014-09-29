@@ -135,7 +135,7 @@ else
     ifdef HHKB_JP
     	SRC := keymap_jp.c $(SRC)
     else
-	SRC := keymap_hasu.c $(SRC)
+	SRC := keymap_mani.c $(SRC)
     endif
 endif
 
