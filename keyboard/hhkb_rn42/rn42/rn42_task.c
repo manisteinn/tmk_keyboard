@@ -148,6 +148,7 @@ bool command_extra(uint8_t code)
             print("Del: enter/exit config mode(auto_connect/disconnect)\n");
             print("i:   RN-42 info\n");
             print("b:   battery voltage\n");
+            print("f:   forget paired devices\n");
 
             if (config_mode) {
                 return true;
@@ -209,6 +210,47 @@ bool command_extra(uint8_t code)
             xprintf("%02u:",   t/3600);
             xprintf("%02u:",   t%3600/60);
             xprintf("%02u\n",  t%60);
+            return true;
+        case KC_F:
+            xprintf("forget paired devices\n");
+
+            prev_driver = host_get_driver();
+            clear_keyboard();
+            _delay_ms(500);
+            host_set_driver(&rn42_config_driver);   // null driver; not to send a key to host
+            rn42_disconnect();
+            print("\nRN-42: disconnect\n");
+
+            _delay_ms(1100); // at least 1 sec before/after command mode command
+            serial_send(36); // 3x $ to enter command mode
+            serial_send(36);
+            serial_send(36);
+            _delay_ms(1100); // at least 1 sec before/after command mode command
+
+            // Set PIN to 1234
+            serial_send(83); // S
+            serial_send(80); // P
+            serial_send(44); // ,
+            serial_send(49); // 1
+            serial_send(50); // 2
+            serial_send(51); // 3
+            serial_send(52); // 4
+            serial_send(13); // CR
+            _delay_ms(1000);
+
+            // Reboot
+            serial_send(82); // R
+            serial_send(44); // ,
+            serial_send(49); // 1
+            serial_send(13); // CR
+
+            _delay_ms(5000); // wait for reboot
+
+            rn42_autoconnect();
+            print("\nRN-42: auto_connect\n");
+            command_state = ONESHOT;
+            host_set_driver(prev_driver);
+
             return true;
         default:
             if (config_mode)
